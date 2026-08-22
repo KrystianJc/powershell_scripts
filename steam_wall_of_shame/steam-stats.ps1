@@ -80,5 +80,5 @@ Write-Host ("Total wasted (regular prices): {0:N2} $currency" -f $statsRegular.S
 Write-Host ("Discount value:                {0:N2} $currency" -f ($statsRegular.Sum - $statsFinal.Sum))
 Write-Host ("Average price (current):       {0:N2} $currency" -f $statsFinal.Average)
 Write-Host ("Average price (regular):       {0:N2} $currency" -f $statsRegular.Average)
-Write-Host ("Most expensive (current):      {1:N2} $currency - {0}" -f $mostExpensiveFinal.Price, $mostExpensiveFinal.Name)
-Write-Host ("Most expensive (regular):      {1:N2} $currency - {0}" -f $mostExpensiveRegular.PriceRegular, $mostExpensiveRegular.Name)
+Write-Host ("Most expensive (current):      {1:N2} - {0} $currency" -f $mostExpensiveFinal.Price, $mostExpensiveFinal.Name)
+Write-Host ("Most expensive (regular):      {1:N2} - {0} $currency " -f $mostExpensiveRegular.PriceRegular, $mostExpensiveRegular.Name)
