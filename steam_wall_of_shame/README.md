@@ -39,6 +39,8 @@ The script does not throttle or cache, so:
 - large libraries may hit the limit partway through
 - running the script repeatedly in a short time makes it more likely
 - if results come back empty, wait about 5 minutes and try again
+- the script has no cache, so re-running it starts over from the first game
+  and never gets past the limit on large libraries
 
 A delay between requests and a local price cache would fix this properly.
 
