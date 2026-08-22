@@ -1,4 +1,5 @@
 {
   "steamApiKey": "",
-  "steamId": ""
+  "steamId": "",
+  "countryCode": ""
 }
