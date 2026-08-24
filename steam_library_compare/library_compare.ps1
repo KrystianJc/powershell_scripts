@@ -69,7 +69,20 @@ function Set-YourSteamId {
 
     Write-Host "Saved. Your SteamID is now $newId" -ForegroundColor Green
 }
+function Set-FriendSteamId {
+    $newId = Read-Host "Enter your new SteamID64"
 
+    if (-not $newId) {
+        Write-Host "Nothing entered, keeping the old value." -ForegroundColor Yellow
+        return
+    }
+
+    $config.friendSteamId = $newId
+    $script:friendId = $newId
+    $config | ConvertTo-Json | Set-Content $configPath -Encoding utf8
+
+    Write-Host "Saved. Friend's SteamID is now $newId" -ForegroundColor Green
+}
 
 $configPath = Join-Path $PSScriptRoot 'config.json'
 
@@ -108,7 +121,7 @@ while ($running) {
     }
 }
         '2' { Set-YourSteamId }
-        '3' { Write-Host "-> would change friend's SteamID" -ForegroundColor Green }
+        '3' { Set-FriendSteamId }
         '4' { Write-Host "-> would change API key" -ForegroundColor Green }
         '5' { $running = $false }
         default { Write-Host "Invalid option, try again" -ForegroundColor Red }
