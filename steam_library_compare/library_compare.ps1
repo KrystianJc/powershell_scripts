@@ -31,6 +31,11 @@ $friendGames = Get-SteamLibrary -SteamId $friendId
 
 $sharedGames = Compare-Object $yourGames $friendGames -Property appid -IncludeEqual -ExcludeDifferent -PassThru
 
+$url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=$apiKey&steamids=$yourId,$friendId"
+$players = (Invoke-RestMethod $url).response.players
+$yourNick   = ($players | Where-Object steamid -eq $yourId).personaname
+$friendNick = ($players | Where-Object steamid -eq $friendId).personaname
+
 $friendLookup = @{}
 
 foreach ($game in $friendGames) {
@@ -40,12 +45,15 @@ foreach ($game in $friendGames) {
 $comparison = foreach ($game in $sharedGames) {
     $friendGame = $friendLookup[$game.appid]
 
-    [PSCustomObject]@{
-        Name        = $game.name
-        YourHours   = [math]::Round($game.playtime_forever / 60, 1)
-        FriendHours = [math]::Round($friendGame.playtime_forever / 60, 1)
+    $row = [ordered]@{    
     }
+    $row['Game Name'] = $game.name
+    $row[$yourNick]   = [math]::Round($game.playtime_forever / 60, 1)
+    $row[$friendNick] = [math]::Round($friendGame.playtime_forever / 60, 1)
+
+    [PSCustomObject]$row
 }
+
 $comparison |
-    Sort-Object Name|
+    Sort-Object 'Game Name' |
     Format-Table -AutoSize
