@@ -4,7 +4,7 @@ function Get-SteamLibrary {
     )
 
     $url = "https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/" +
-           "?key=$apiKey&steamid=$SteamId&include_appinfo=true&format=json"
+       "?key=$apiKey&steamid=$SteamId&include_appinfo=true&include_played_free_games=true&format=json"
 
     $games = (Invoke-RestMethod $url).response.games
 
@@ -16,6 +16,12 @@ function Get-SteamLibrary {
 }
 
 function Invoke-Comparison {
+
+    if (-not $apiKey -or -not $yourId -or -not $friendId) {
+        Write-Host "Fill in API key and both SteamIDs first (options 2-4)." -ForegroundColor Yellow
+        return
+    }
+
     $yourGames   = Get-SteamLibrary -SteamId $yourId
     $friendGames = Get-SteamLibrary -SteamId $friendId
 
@@ -49,6 +55,22 @@ function Invoke-Comparison {
     Read-Host "Press Enter to return to menu"
 }
 
+function Set-YourSteamId {
+    $newId = Read-Host "Enter your new SteamID64"
+
+    if (-not $newId) {
+        Write-Host "Nothing entered, keeping the old value." -ForegroundColor Yellow
+        return
+    }
+
+    $config.yourSteamId = $newId
+    $script:yourId = $newId
+    $config | ConvertTo-Json | Set-Content $configPath -Encoding utf8
+
+    Write-Host "Saved. Your SteamID is now $newId" -ForegroundColor Green
+}
+
+
 $configPath = Join-Path $PSScriptRoot 'config.json'
 
 if (-not (Test-Path $configPath)) {
@@ -59,6 +81,8 @@ $config = Get-Content $configPath -Raw | ConvertFrom-Json
 $apiKey = $config.steamApiKey
 $yourId = $config.yourSteamId
 $friendId = $config.friendSteamId
+
+
 
 $running = $true
 
@@ -83,11 +107,11 @@ while ($running) {
         Write-Host "Comparison failed: $($_.Exception.Message)" -ForegroundColor Red
     }
 }
-        '2' { Write-Host "-> would change your SteamID" -ForegroundColor Green }
+        '2' { Set-YourSteamId }
         '3' { Write-Host "-> would change friend's SteamID" -ForegroundColor Green }
         '4' { Write-Host "-> would change API key" -ForegroundColor Green }
         '5' { $running = $false }
         default { Write-Host "Invalid option, try again" -ForegroundColor Red }
     }
 }
-   
+
