@@ -42,8 +42,8 @@ function Invoke-Comparison {
 
         $row = [ordered]@{}
         $row['Game Name'] = $game.name
-        $row[$yourNick]   = [math]::Round($game.playtime_forever / 60, 1)
-        $row[$friendNick] = [math]::Round($friendGame.playtime_forever / 60, 1)
+        $row[$yourNick] = "$([math]::Round($game.playtime_forever / 60, 1))h"
+        $row[$friendNick] = "$([math]::Round($friendGame.playtime_forever / 60, 1))h"
 
         [PSCustomObject]$row
     }
