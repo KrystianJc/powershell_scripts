@@ -1,14 +1,3 @@
-$configPath = Join-Path $PSScriptRoot 'config.json'
-
-if (-not (Test-Path $configPath)) {
-    throw "Missing config.json - copy config.example.json, rename it and fill in your data."
-}
-
-$config = Get-Content $configPath -Raw | ConvertFrom-Json
-$apiKey = $config.steamApiKey
-$yourId = $config.yourSteamId
-$friendId = $config.friendSteamId
-
 function Get-SteamLibrary {
     param(
         [string]$SteamId
@@ -26,34 +15,79 @@ function Get-SteamLibrary {
     return $games
 }
 
-$yourGames   = Get-SteamLibrary -SteamId $yourId
-$friendGames = Get-SteamLibrary -SteamId $friendId
+function Invoke-Comparison {
+    $yourGames   = Get-SteamLibrary -SteamId $yourId
+    $friendGames = Get-SteamLibrary -SteamId $friendId
 
-$sharedGames = Compare-Object $yourGames $friendGames -Property appid -IncludeEqual -ExcludeDifferent -PassThru
+    $sharedGames = Compare-Object $yourGames $friendGames -Property appid -IncludeEqual -ExcludeDifferent -PassThru
 
-$url = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=$apiKey&steamids=$yourId,$friendId"
-$players = (Invoke-RestMethod $url).response.players
-$yourNick   = ($players | Where-Object steamid -eq $yourId).personaname
-$friendNick = ($players | Where-Object steamid -eq $friendId).personaname
+    $summaryUrl = "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key=$apiKey&steamids=$yourId,$friendId"
+    $players = (Invoke-RestMethod $summaryUrl).response.players
+    $yourNick   = ($players | Where-Object steamid -eq $yourId).personaname
+    $friendNick = ($players | Where-Object steamid -eq $friendId).personaname
 
-$friendLookup = @{}
-
-foreach ($game in $friendGames) {
-    $friendLookup[$game.appid] = $game
-}
-
-$comparison = foreach ($game in $sharedGames) {
-    $friendGame = $friendLookup[$game.appid]
-
-    $row = [ordered]@{    
+    $friendLookup = @{}
+    foreach ($game in $friendGames) {
+        $friendLookup[$game.appid] = $game
     }
-    $row['Game Name'] = $game.name
-    $row[$yourNick]   = [math]::Round($game.playtime_forever / 60, 1)
-    $row[$friendNick] = [math]::Round($friendGame.playtime_forever / 60, 1)
 
-    [PSCustomObject]$row
+    $comparison = foreach ($game in $sharedGames) {
+        $friendGame = $friendLookup[$game.appid]
+
+        $row = [ordered]@{}
+        $row['Game Name'] = $game.name
+        $row[$yourNick]   = [math]::Round($game.playtime_forever / 60, 1)
+        $row[$friendNick] = [math]::Round($friendGame.playtime_forever / 60, 1)
+
+        [PSCustomObject]$row
+    }
+
+    $comparison |
+        Sort-Object 'Game Name' |
+        Format-Table -AutoSize
+
+    Read-Host "Press Enter to return to menu"
 }
 
-$comparison |
-    Sort-Object 'Game Name' |
-    Format-Table -AutoSize
+$configPath = Join-Path $PSScriptRoot 'config.json'
+
+if (-not (Test-Path $configPath)) {
+    throw "Missing config.json - copy config.example.json, rename it and fill in your data."
+}
+
+$config = Get-Content $configPath -Raw | ConvertFrom-Json
+$apiKey = $config.steamApiKey
+$yourId = $config.yourSteamId
+$friendId = $config.friendSteamId
+
+$running = $true
+
+while ($running) {
+    Write-Host ""
+    Write-Host "=== Steam Library Compare ===" -ForegroundColor Cyan
+    Write-Host "1. Run comparison"
+    Write-Host "2. Change your SteamID"
+    Write-Host "3. Change friend's SteamID"
+    Write-Host "4. Change API key"
+    Write-Host "5. Exit"
+    Write-Host ""
+
+    $choice = Read-Host "Choose an option"
+
+    switch ($choice) {
+        '1' {
+    try {
+        Invoke-Comparison
+    }
+    catch {
+        Write-Host "Comparison failed: $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+        '2' { Write-Host "-> would change your SteamID" -ForegroundColor Green }
+        '3' { Write-Host "-> would change friend's SteamID" -ForegroundColor Green }
+        '4' { Write-Host "-> would change API key" -ForegroundColor Green }
+        '5' { $running = $false }
+        default { Write-Host "Invalid option, try again" -ForegroundColor Red }
+    }
+}
+   
